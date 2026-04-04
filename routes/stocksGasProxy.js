@@ -4,7 +4,7 @@ const axios = require('axios')
 const router = express.Router()
 
 // Point this to your deployed Apps Script Web App URL
-const GAS_URL = process.env.STOCKS_GAS_URL || 'https://script.google.com/macros/s/AKfycbzWT7aSLTZl-qW2peDaHMcsW_aA55ttVfheZThFfYpj7sMm09Mg_6Gp2xjc7Z0XNHmwpw/exec'
+const GAS_URL = process.env.STOCKS_GAS_URL || 'https://script.google.com/macros/s/AKfycbzTMtDCCcvQrTnrTAf0ZNHHF21aoz4ruPMrmW8gsM5PLHhyCaAxOlcgfIZOOhTa-etX/exec'
 const upper = (v) => String(v || '').trim().toUpperCase()
 
 // GET proxy (list/current/pending)
@@ -32,13 +32,17 @@ router.post('/', async (req, res) => {
     const isUpdate = String(payload.action || '').toLowerCase() === 'update'
     const notFound = /movement not found/i.test(String(data?.message || ''))
     const chassisNo = upper(payload?.data?.chassisNo || payload?.data?.Chassis_No)
+    const originalChassis = upper(payload?.data?.originalChassis || payload?.data?.OriginalChassis)
     const attemptedId = String(payload?.movementId || payload?.id || '').trim()
     if (isUpdate && data?.ok === false && notFound && chassisNo) {
       let fallbackId = ''
       try {
         const current = await axios.get(GAS_URL, { params: { action: 'current', limit: 3000, page: 1 } })
         const currentRows = Array.isArray(current?.data?.data) ? current.data.data : []
-        const snap = currentRows.find((r) => upper(r?.chassisNo || r?.Chassis_No) === chassisNo)
+        const snap = currentRows.find((r) => {
+          const rowChassis = upper(r?.chassisNo || r?.Chassis_No)
+          return rowChassis === chassisNo || (originalChassis && rowChassis === originalChassis)
+        })
         fallbackId = String(snap?.lastMovementId || snap?.movementId || '').trim()
       } catch (_) {
         // ignore and continue to next fallback
@@ -47,7 +51,10 @@ router.post('/', async (req, res) => {
         try {
           const list = await axios.get(GAS_URL, { params: { action: 'list', limit: 3000, page: 1 } })
           const listRows = Array.isArray(list?.data?.data) ? list.data.data : []
-          const mv = listRows.find((r) => upper(r?.chassisNo || r?.Chassis_No) === chassisNo)
+          const mv = listRows.find((r) => {
+            const rowChassis = upper(r?.chassisNo || r?.Chassis_No)
+            return rowChassis === chassisNo || (originalChassis && rowChassis === originalChassis)
+          })
           fallbackId = String(mv?.movementId || mv?.MovementId || '').trim()
         } catch (_) {
           // ignore and return original response
