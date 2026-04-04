@@ -16,6 +16,7 @@ const userRoutes = require('./routes/userRoutes')
 const formsRoutes = require('./routes/formsRoutes')
 const branchRoutes = require('./routes/branchRoutes')
 const stocksGasProxyRoutes = require('./routes/stocksGasProxy')
+const vehicleCatalogGasProxyRoutes = require('./routes/vehicleCatalogGasProxy')
 const announcementRoutes = require('./routes/announcementRoutes')
 const cors = require('cors')
 
@@ -55,14 +56,22 @@ app.use(cors({
 const bodyLimit = process.env.JSON_BODY_LIMIT || '25mb'
 app.use(express.json({ limit: bodyLimit }))
 app.use(express.urlencoded({ extended: true, limit: bodyLimit }))
-// Basic health checks
+// Basic health checks for uptime monitors and client warm-up requests
 app.get('/', (req, res) => res.status(200).send('OK'))
-app.get('/healthz', (req, res) => res.status(200).json({ status: 'ok' }))
+app.get('/healthz', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'shantha-motors-api',
+    uptimeSeconds: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  })
+})
 app.use('/api/users', userRoutes)
 
 app.use('/api/forms', formsRoutes)
 app.use('/api/branches', branchRoutes)
 app.use('/api/stocks/gas', stocksGasProxyRoutes)
+app.use('/api/vehicle-catalog/gas', vehicleCatalogGasProxyRoutes)
 app.use('/api/announcements', announcementRoutes)
 
 
