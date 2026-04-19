@@ -453,7 +453,7 @@ router.post('/booking/webhook', async (req, res) => {
     const config = {
       headers: { 'Content-Type': 'application/json', ...(headers || {}) },
       validateStatus: () => true,
-      timeout: 30000,
+      timeout: 120000,
       httpAgent: HTTP_AGENT,
       httpsAgent: HTTPS_AGENT,
       // allow large JSON payloads (e.g., base64 PDF) to pass through
@@ -504,17 +504,24 @@ router.post('/booking/webhook', async (req, res) => {
       let total = null
       const MAX_PAGES = Math.max(1, Math.ceil(requestedPageSize / 100))
 
-      while (page <= MAX_PAGES && allRows.length < requestedPageSize) {
-        const pagePayload = { ...basePayload, page }
-        const pageData = await getPage(pagePayload)
-        if (page === 1) firstData = pageData
+      const promises = []
+      for (let p = 1; p <= MAX_PAGES; p++) {
+        promises.push(getPage({ ...basePayload, page: p }).catch(e => {
+          console.warn(`Failed to fetch page ${p}:`, e.message);
+          return null;
+        }))
+      }
+
+      const results = await Promise.all(promises)
+      for (let i = 0; i < results.length; i++) {
+        const pageData = results[i]
+        if (!pageData) continue
+        if (i === 0) firstData = pageData
         if (total === null) total = extractTotalFromWebhookData(pageData)
         const pageRows = extractRowsFromWebhookData(pageData)
-        if (!pageRows.length) break
-        allRows = allRows.concat(pageRows)
-        if (total !== null && allRows.length >= total) break
-        if (pageRows.length < 100) break
-        page += 1
+        if (pageRows.length > 0) {
+          allRows = allRows.concat(pageRows)
+        }
       }
 
       if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
@@ -559,7 +566,7 @@ router.post('/jobcard/webhook', async (req, res) => {
     const config = {
       headers: { 'Content-Type': 'application/json', ...(headers || {}) },
       validateStatus: () => true,
-      timeout: 30000,
+      timeout: 120000,
       httpAgent: HTTP_AGENT,
       httpsAgent: HTTPS_AGENT,
       maxBodyLength: Infinity,
@@ -609,17 +616,24 @@ router.post('/jobcard/webhook', async (req, res) => {
       let total = null
       const MAX_PAGES = Math.max(1, Math.ceil(requestedPageSize / 100))
 
-      while (page <= MAX_PAGES && allRows.length < requestedPageSize) {
-        const pagePayload = { ...basePayload, page }
-        const pageData = await getPage(pagePayload)
-        if (page === 1) firstData = pageData
+      const promises = []
+      for (let p = 1; p <= MAX_PAGES; p++) {
+        promises.push(getPage({ ...basePayload, page: p }).catch(e => {
+          console.warn(`Failed to fetch page ${p}:`, e.message);
+          return null;
+        }))
+      }
+
+      const results = await Promise.all(promises)
+      for (let i = 0; i < results.length; i++) {
+        const pageData = results[i]
+        if (!pageData) continue
+        if (i === 0) firstData = pageData
         if (total === null) total = extractTotalFromWebhookData(pageData)
         const pageRows = extractRowsFromWebhookData(pageData)
-        if (!pageRows.length) break
-        allRows = allRows.concat(pageRows)
-        if (total !== null && allRows.length >= total) break
-        if (pageRows.length < 100) break
-        page += 1
+        if (pageRows.length > 0) {
+          allRows = allRows.concat(pageRows)
+        }
       }
 
       if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
