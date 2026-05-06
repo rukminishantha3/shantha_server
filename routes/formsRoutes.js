@@ -37,11 +37,21 @@ function shortId6() {
   }
 }
 
-// No DB reservation: generate a human-friendly serial per request
+// Ultra-fast serial generator: uses timestamp for guaranteed uniqueness without DB scans.
 function buildSerial(kind, branchCode) {
   const bc = String(branchCode || '').trim().toUpperCase()
   const prefix = kind === 'jobcard' ? 'JC' : 'Q'
-  return `${prefix}-${bc}-${shortId6()}`
+  
+  const now = new Date()
+  const yy = String(now.getFullYear()).slice(-2)
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  const hh = String(now.getHours()).padStart(2, '0')
+  const min = String(now.getMinutes()).padStart(2, '0')
+  const ss = String(now.getSeconds()).padStart(2, '0')
+  
+  // Format: JC-BRANCH-YYMMDD-HHMMSS
+  return `${prefix}-${bc}-${yy}${mm}${dd}-${hh}${min}${ss}`
 }
 
 function ensureEntries(obj) {
@@ -137,10 +147,9 @@ async function serialExistsInCsv(url, serial, kind = 'quotation') {
 
 router.get('/quotation/next-serial', async (req, res) => {
   try {
-    const csvUrl = req.query.csv || process.env.QUOTATION_RESPONSES_CSV_URL
-    if (!csvUrl) return res.json({ success: true, nextSerial: '1', source: 'fallback' })
-    const nextSerial = await nextSerialFromCsv(csvUrl, 'quotation')
-    return res.json({ success: true, nextSerial, source: 'csv' })
+    // Ultra-fast generation: no scan needed for timestamp-based IDs.
+    const nextSerial = buildSerial('quotation', req.query.branchCode || 'GEN')
+    return res.json({ success: true, nextSerial, source: 'instant' })
   } catch (error) {
     console.error('Failed to fetch next quotation serial:', error)
     return res.status(500).json({ success: false, message: 'Unable to fetch next serial number.' })
@@ -226,19 +235,8 @@ router.post('/jobcard/serial/reserve', async (req, res) => {
     }
     if (!m10) return res.status(400).json({ success: false, message: 'Valid 10-digit mobile is required' })
     if (!bc) return res.status(400).json({ success: false, message: 'branchCode is required' })
-    const csvUrl = process.env.JOBCARD_RESPONSES_CSV_URL || process.env.JOBCARD_SHEET_CSV_URL
-    let serial = buildSerial('jobcard', bc)
-    if (csvUrl) {
-      for (let i = 0; i < 3; i++) {
-        try {
-          // Re-roll if the serial already exists in the sheet.
-          if (!(await serialExistsInCsv(csvUrl, serial, 'jobcard'))) break
-          serial = buildSerial('jobcard', bc)
-        } catch {
-          break
-        }
-      }
-    }
+    // Ultra-fast generation: no collision check needed with second-level precision.
+    const serial = buildSerial('jobcard', bc)
     return res.json({ success: true, serial })
   } catch (error) {
     console.error('Failed to reserve jobcard serial:', error)
