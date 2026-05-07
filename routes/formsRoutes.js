@@ -352,6 +352,103 @@ function extractTotalFromWebhookData(data) {
   return null
 }
 
+function parseIstTimestampMs(value) {
+  if (value === null || value === undefined || value === '') return null
+  if (value instanceof Date) {
+    const t = value.getTime()
+    return Number.isFinite(t) ? t : null
+  }
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const s = String(value).trim()
+  if (!s) return null
+  if (/^\d+$/.test(s)) {
+    const n = Number(s)
+    return Number.isFinite(n) ? n : null
+  }
+  if (s.includes('T') && (s.includes('Z') || /[+-]\d{2}:?\d{2}$/.test(s))) {
+    const t = Date.parse(s)
+    return Number.isFinite(t) ? t : null
+  }
+  const m = s.match(/^(\d{1,4})([/-])(\d{1,2})\2(\d{1,4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i)
+  if (m) {
+    const first = parseInt(m[1], 10)
+    const second = parseInt(m[3], 10)
+    const third = parseInt(m[4], 10)
+    let y
+    let month
+    let day
+    if (m[1].length === 4) {
+      y = first
+      month = second
+      day = third
+    } else {
+      y = third < 100 ? third + 2000 : third
+      day = first
+      month = second
+    }
+    let hh = m[5] ? parseInt(m[5], 10) : 0
+    const mm = m[6] ? parseInt(m[6], 10) : 0
+    const ss = m[7] ? parseInt(m[7], 10) : 0
+    const ap = String(m[8] || '').toUpperCase()
+    if (ap === 'PM' && hh < 12) hh += 12
+    if (ap === 'AM' && hh === 12) hh = 0
+    if (
+      y >= 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31 &&
+      hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59 && ss >= 0 && ss <= 59
+    ) {
+      const t = Date.UTC(y, month - 1, day, hh, mm, ss) - (5.5 * 60 * 60 * 1000)
+      const check = new Date(t + (5.5 * 60 * 60 * 1000))
+      if (check.getUTCFullYear() === y && check.getUTCMonth() + 1 === month && check.getUTCDate() === day) return t
+    }
+  }
+  const t = Date.parse(s)
+  return Number.isFinite(t) ? t : null
+}
+
+function extractWebhookRowTimestamp(row) {
+  if (!row || typeof row !== 'object') return null
+  let payload = null
+  try {
+    const raw = row['Raw Payload'] || row.rawPayload || row.payload || row.Payload
+    payload = raw && typeof raw === 'object' ? raw : JSON.parse(String(raw || '{}'))
+  } catch {
+    payload = null
+  }
+  const candidates = [
+    payload?.ts,
+    payload?.createdAt,
+    payload?.submittedAt,
+    payload?.formValues?.ts,
+    payload?.formValues?.createdAt,
+    row['Created At'],
+    row['Submitted At'],
+    row.Timestamp,
+    row.timestamp,
+    row.createdAt,
+    row.ts,
+    row.Time,
+    row.Date,
+  ]
+  for (const value of candidates) {
+    const t = parseIstTimestampMs(value)
+    if (t) return t
+  }
+  return null
+}
+
+function applyWebhookDateRangeFilter(data, payload) {
+  const start = parseIstTimestampMs(payload?.start)
+  const end = parseIstTimestampMs(payload?.end)
+  if (!start || !end) return data
+  const rows = extractRowsFromWebhookData(data)
+  if (!rows.length) return data
+  const filteredRows = rows.filter((row) => {
+    const t = extractWebhookRowTimestamp(row)
+    return Boolean(t && t >= start && t <= end)
+  })
+  return mergeRowsIntoWebhookData(data, filteredRows)
+}
+
 function mergeRowsIntoWebhookData(data, rows) {
   const out = (data && typeof data === 'object' && !Array.isArray(data))
     ? { ...data }
@@ -491,7 +588,7 @@ router.post('/booking/webhook', async (req, res) => {
       const shouldAutoPaginate = action === 'list' && requestedPage === 1 && (requestedPageSizeRaw === 0 || requestedPageSizeRaw > 100)
 
       if (!shouldAutoPaginate) {
-        const data = applyLiteWebhookData(await getPage(payload || {}), liteMode)
+        const data = applyLiteWebhookData(applyWebhookDateRangeFilter(await getPage(payload || {}), payload || {}), liteMode)
         return res.json({ success: true, forwarded: true, status: 200, data })
       }
 
@@ -523,7 +620,7 @@ router.post('/booking/webhook', async (req, res) => {
       }
 
       if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
-      const merged = applyLiteWebhookData(mergeRowsIntoWebhookData(firstData, allRows), liteMode)
+      const merged = applyLiteWebhookData(applyWebhookDateRangeFilter(mergeRowsIntoWebhookData(firstData, allRows), payload || {}), liteMode)
       cachePut(webhookUrl, payload, merged)
       return res.json({ success: true, forwarded: true, status: 200, data: merged })
     } else {
