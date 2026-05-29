@@ -528,6 +528,42 @@ function markSerial(key) {
   }
 }
 
+async function axiosRequestWithRetry(method, url, dataOrParams, config, maxRetries = 3, delayMs = 600) {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      let resp;
+      if (method.toUpperCase() === 'GET') {
+        const u = new URL(url);
+        Object.entries(dataOrParams || {}).forEach(([k, v]) => u.searchParams.append(k, String(v)));
+        resp = await axios.get(u.toString(), config);
+      } else {
+        resp = await axios.post(url, dataOrParams, config);
+      }
+
+      if (!String(resp.status).startsWith('2')) {
+        throw new Error(`Webhook call failed with status ${resp.status}`);
+      }
+
+      const respData = resp.data;
+      const isTransientError = respData && respData.ok === false && typeof respData.error === 'string' &&
+        /simultaneous invocations|lock|timeout|busy/i.test(respData.error);
+
+      if (isTransientError && attempt < maxRetries) {
+        console.warn(`Transient Apps Script error on attempt ${attempt}: ${respData.error}. Retrying in ${delayMs * attempt}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
+        continue;
+      }
+      return resp;
+    } catch (err) {
+      lastErr = err;
+      if (attempt === maxRetries) throw err;
+      console.warn(`Webhook request failed on attempt ${attempt}: ${err.message}. Retrying in ${delayMs * attempt}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
+    }
+  }
+}
+
 // Booking via generic webhook (e.g., Google Apps Script Web App)
 router.post('/booking/webhook', async (req, res) => {
   try {
@@ -566,15 +602,7 @@ router.post('/booking/webhook', async (req, res) => {
         return withInflight(inflightKey, async () => {
           const cachedAgain = cacheGet(webhookUrl, pagePayload)
           if (cachedAgain) return cachedAgain
-          const u = new URL(webhookUrl)
-          Object.entries(pagePayload || {}).forEach(([k, v]) => u.searchParams.append(k, String(v)))
-          const pageResp = await axios.get(u.toString(), config)
-          if (!String(pageResp.status).startsWith('2')) {
-            const err = new Error(`Webhook call failed with status ${pageResp.status}`)
-            err.status = pageResp.status
-            err.data = pageResp.data
-            throw err
-          }
+          const pageResp = await axiosRequestWithRetry('GET', webhookUrl, pagePayload, config)
           cachePut(webhookUrl, pagePayload, pageResp.data)
           return pageResp.data
         })
@@ -593,29 +621,48 @@ router.post('/booking/webhook', async (req, res) => {
       }
 
       const basePayload = { ...(payload || {}) }
-      let page = 1
       let allRows = []
       let firstData = null
       let total = null
-      const MAX_PAGES = Math.max(1, Math.ceil(requestedPageSize / 100))
+
+      // Fetch the first page first to determine total rows
+      try {
+        firstData = await getPage({ ...basePayload, page: 1 })
+      } catch (e) {
+        console.error('Failed to fetch page 1 for booking webhook:', e.message)
+        return res.status(502).json({ success: false, message: 'Failed to fetch page 1 from booking webhook', detail: e.message })
+      }
+
+      if (!firstData) {
+        return res.status(502).json({ success: false, message: 'No data returned for page 1 of booking webhook' })
+      }
+
+      total = extractTotalFromWebhookData(firstData)
+      const firstPageRows = extractRowsFromWebhookData(firstData)
+      if (firstPageRows.length > 0) {
+        allRows = allRows.concat(firstPageRows)
+      }
+
+      const limitRows = total !== null ? Math.min(requestedPageSize, total) : requestedPageSize
+      const totalPagesNeeded = Math.max(1, Math.ceil(limitRows / 100))
 
       const promises = []
-      for (let p = 1; p <= MAX_PAGES; p++) {
+      for (let p = 2; p <= totalPagesNeeded; p++) {
         promises.push(getPage({ ...basePayload, page: p }).catch(e => {
           console.warn(`Failed to fetch page ${p}:`, e.message);
           return null;
         }))
       }
 
-      const results = await Promise.all(promises)
-      for (let i = 0; i < results.length; i++) {
-        const pageData = results[i]
-        if (!pageData) continue
-        if (i === 0) firstData = pageData
-        if (total === null) total = extractTotalFromWebhookData(pageData)
-        const pageRows = extractRowsFromWebhookData(pageData)
-        if (pageRows.length > 0) {
-          allRows = allRows.concat(pageRows)
+      if (promises.length > 0) {
+        const results = await Promise.all(promises)
+        for (let i = 0; i < results.length; i++) {
+          const pageData = results[i]
+          if (!pageData) continue
+          const pageRows = extractRowsFromWebhookData(pageData)
+          if (pageRows.length > 0) {
+            allRows = allRows.concat(pageRows)
+          }
         }
       }
 
@@ -624,7 +671,7 @@ router.post('/booking/webhook', async (req, res) => {
       cachePut(webhookUrl, payload, merged)
       return res.json({ success: true, forwarded: true, status: 200, data: merged })
     } else {
-      resp = await axios.post(webhookUrl, payload || {}, config)
+      resp = await axiosRequestWithRetry('POST', webhookUrl, payload || {}, config)
     }
     if (String(resp.status).startsWith('2')) {
       if (shouldCheckDuplicate) {
@@ -678,15 +725,7 @@ router.post('/jobcard/webhook', async (req, res) => {
         return withInflight(inflightKey, async () => {
           const cachedAgain = cacheGet(webhookUrl, pagePayload)
           if (cachedAgain) return cachedAgain
-          const u = new URL(webhookUrl)
-          Object.entries(pagePayload || {}).forEach(([k, v]) => u.searchParams.append(k, String(v)))
-          const pageResp = await axios.get(u.toString(), config)
-          if (!String(pageResp.status).startsWith('2')) {
-            const err = new Error(`Webhook call failed with status ${pageResp.status}`)
-            err.status = pageResp.status
-            err.data = pageResp.data
-            throw err
-          }
+          const pageResp = await axiosRequestWithRetry('GET', webhookUrl, pagePayload, config)
           cachePut(webhookUrl, pagePayload, pageResp.data)
           return pageResp.data
         })
@@ -705,29 +744,48 @@ router.post('/jobcard/webhook', async (req, res) => {
       }
 
       const basePayload = { ...(payload || {}) }
-      let page = 1
       let allRows = []
       let firstData = null
       let total = null
-      const MAX_PAGES = Math.max(1, Math.ceil(requestedPageSize / 100))
+
+      // Fetch the first page first to determine total rows
+      try {
+        firstData = await getPage({ ...basePayload, page: 1 })
+      } catch (e) {
+        console.error('Failed to fetch page 1 for jobcard webhook:', e.message)
+        return res.status(502).json({ success: false, message: 'Failed to fetch page 1 from jobcard webhook', detail: e.message })
+      }
+
+      if (!firstData) {
+        return res.status(502).json({ success: false, message: 'No data returned for page 1 of jobcard webhook' })
+      }
+
+      total = extractTotalFromWebhookData(firstData)
+      const firstPageRows = extractRowsFromWebhookData(firstData)
+      if (firstPageRows.length > 0) {
+        allRows = allRows.concat(firstPageRows)
+      }
+
+      const limitRows = total !== null ? Math.min(requestedPageSize, total) : requestedPageSize
+      const totalPagesNeeded = Math.max(1, Math.ceil(limitRows / 100))
 
       const promises = []
-      for (let p = 1; p <= MAX_PAGES; p++) {
+      for (let p = 2; p <= totalPagesNeeded; p++) {
         promises.push(getPage({ ...basePayload, page: p }).catch(e => {
           console.warn(`Failed to fetch page ${p}:`, e.message);
           return null;
         }))
       }
 
-      const results = await Promise.all(promises)
-      for (let i = 0; i < results.length; i++) {
-        const pageData = results[i]
-        if (!pageData) continue
-        if (i === 0) firstData = pageData
-        if (total === null) total = extractTotalFromWebhookData(pageData)
-        const pageRows = extractRowsFromWebhookData(pageData)
-        if (pageRows.length > 0) {
-          allRows = allRows.concat(pageRows)
+      if (promises.length > 0) {
+        const results = await Promise.all(promises)
+        for (let i = 0; i < results.length; i++) {
+          const pageData = results[i]
+          if (!pageData) continue
+          const pageRows = extractRowsFromWebhookData(pageData)
+          if (pageRows.length > 0) {
+            allRows = allRows.concat(pageRows)
+          }
         }
       }
 
@@ -736,7 +794,7 @@ router.post('/jobcard/webhook', async (req, res) => {
       cachePut(webhookUrl, payload, merged)
       return res.json({ success: true, forwarded: true, status: 200, data: merged })
     } else {
-      resp = await axios.post(webhookUrl, payload || {}, config)
+      resp = await axiosRequestWithRetry('POST', webhookUrl, payload || {}, config)
     }
     if (String(resp.status).startsWith('2')) {
       if (shouldCheckDuplicate) {
