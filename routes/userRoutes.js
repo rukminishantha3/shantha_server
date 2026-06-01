@@ -291,6 +291,7 @@ router.post('/reset-password', async (req, res) => {
     user.password = hashedPassword
     user.resetPasswordToken = undefined
     user.resetPasswordExpiresAt = undefined
+    user.tokenInvalidAfter = new Date()
     await user.save()
 
     return res.send({
@@ -451,6 +452,7 @@ router.put('/:id', authMiddleware, requireAdminOwner, async (req, res) => {
 
     if (body.password) {
       body.password = await bcrypt.hash(String(body.password), BCRYPT_SALT_ROUNDS)
+      body.tokenInvalidAfter = new Date()
     } else {
       delete body.password
     }
