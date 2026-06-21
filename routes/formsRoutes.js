@@ -458,12 +458,12 @@ function mergeRowsIntoWebhookData(data, rows) {
   else if (Array.isArray(out.data)) out.data = rows
   else out.rows = rows
   const total = rows.length
-  if ('total' in out || out.total === undefined) out.total = total
-  if ('count' in out) out.count = total
-  if ('totalRows' in out) out.totalRows = total
-  if ('totalCount' in out) out.totalCount = total
-  if ('page' in out) out.page = 1
-  if ('pageNo' in out) out.pageNo = 1
+  if (out.total === undefined || out.total === null) out.total = total
+  if ('count' in out && (out.count === undefined || out.count === null)) out.count = total
+  if ('totalRows' in out && (out.totalRows === undefined || out.totalRows === null)) out.totalRows = total
+  if ('totalCount' in out && (out.totalCount === undefined || out.totalCount === null)) out.totalCount = total
+  if ('page' in out && (out.page === undefined || out.page === null)) out.page = 1
+  if ('pageNo' in out && (out.pageNo === undefined || out.pageNo === null)) out.pageNo = 1
   return out
 }
 
