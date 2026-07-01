@@ -11,7 +11,9 @@ const ROLE_OPTIONS = [
   'owner',
   'backend', // observability/super-viewer role
   'user', // fallback/basic role
+  'backups',
 ]
+
 
 const STATUS_OPTIONS = ['active', 'inactive', 'suspended']
 

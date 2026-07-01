@@ -451,6 +451,11 @@ router.put('/:id', authMiddleware, requireAdminOwner, async (req, res) => {
     if (typeof body.canSwitchBranch !== 'undefined') body.canSwitchBranch = !!body.canSwitchBranch
 
     if (body.password) {
+      const requester = await User.findById(req.userId).select('role')
+      const reqRole = String(requester?.role || '').toLowerCase()
+      if (reqRole !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Only admin users can reset passwords.' })
+      }
       body.password = await bcrypt.hash(String(body.password), BCRYPT_SALT_ROUNDS)
       body.tokenInvalidAfter = new Date()
     } else {
