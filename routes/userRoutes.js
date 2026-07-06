@@ -29,7 +29,7 @@ async function requireAdminOwner(req, res, next) {
     if (process.env.USER_CRUD_OPEN === 'true') return next()
     const me = await User.findById(userId).select('role')
     const role = String(me?.role || '').toLowerCase()
-    if (role === 'admin' || role === 'owner' || role === 'backend') return next()
+    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend') return next()
     return res.status(403).send({ success: false, message: 'Forbidden: admin/owner/backend only' })
   } catch (err) {
     console.error('requireAdminOwner error', err)

@@ -11,7 +11,7 @@ async function requireAdminOwner(req, res, next) {
     if (!userId || !/^[0-9a-fA-F]{24}$/.test(userId)) return res.status(401).send({ success: false, message: 'Unauthorized' })
     const u = await User.findById(userId).select('role')
     const role = String(u?.role || '').toLowerCase()
-    if (role === 'admin' || role === 'owner' || role === 'backend') return next()
+    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend') return next()
     return res.status(403).send({ success: false, message: 'Forbidden' })
   } catch (e) {
     return res.status(401).send({ success: false, message: 'Unauthorized' })
