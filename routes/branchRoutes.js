@@ -23,7 +23,7 @@ async function requireAdmin(req, res, next) {
     }
     const user = await User.findById(userId).select('role')
     const role = String(user?.role || '').toLowerCase()
-    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend') return next()
+    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend' || role === 'backend2') return next()
     return res.status(403).send({ success: false, message: 'Forbidden: admin/owner/backend only' })
   } catch (err) {
     console.error('requireAdmin error', err)

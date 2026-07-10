@@ -29,7 +29,7 @@ async function requireAdminOwner(req, res, next) {
     if (process.env.USER_CRUD_OPEN === 'true') return next()
     const me = await User.findById(userId).select('role')
     const role = String(me?.role || '').toLowerCase()
-    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend') return next()
+    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend' || role === 'backend2') return next()
     return res.status(403).send({ success: false, message: 'Forbidden: admin/owner/backend only' })
   } catch (err) {
     console.error('requireAdminOwner error', err)
@@ -443,6 +443,22 @@ router.put('/:id', authMiddleware, requireAdminOwner, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid user id' })
     }
+    const requester = await User.findById(req.userId).select('role')
+    const reqRole = String(requester?.role || '').toLowerCase()
+    const targetUser = await User.findById(id)
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+    
+    if (['backend', 'backend2'].includes(reqRole)) {
+      const targetRole = String(targetUser.role || '').toLowerCase()
+      if (['admin', 'owner', 'owner2', 'backend', 'backend2', 'backups'].includes(targetRole)) {
+        return res.status(403).json({ success: false, message: 'Forbidden: You do not have permission to edit this user.' })
+      }
+      if (req.body.role && ['admin', 'owner', 'owner2', 'backend', 'backend2', 'backups'].includes(String(req.body.role).toLowerCase())) {
+        return res.status(403).json({ success: false, message: 'Forbidden: You do not have permission to assign this role.' })
+      }
+    }
     const body = { ...req.body }
     delete body.userId
     if (body.email) body.email = String(body.email).trim().toLowerCase()
@@ -522,6 +538,17 @@ router.delete('/:id', authMiddleware, requireAdminOwner, async (req, res) => {
     const id = String(req.params.id || '')
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid user id' })
+    }
+    const requester = await User.findById(req.userId).select('role')
+    const reqRole = String(requester?.role || '').toLowerCase()
+    
+    if (['backend', 'backend2'].includes(reqRole)) {
+      const targetUser = await User.findById(id)
+      if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' })
+      const targetRole = String(targetUser.role || '').toLowerCase()
+      if (['admin', 'owner', 'owner2', 'backend', 'backend2', 'backups'].includes(targetRole)) {
+        return res.status(403).json({ success: false, message: 'Forbidden: You do not have permission to delete this user.' })
+      }
     }
     const deleted = await User.findByIdAndDelete(id)
     if (!deleted) return res.status(404).json({ success: false, message: 'User not found' })

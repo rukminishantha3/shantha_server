@@ -8,7 +8,7 @@ async function requireBackend(req, res, next) {
   try {
     const u = await User.findById(req.userId).select('role name')
     const role = String(u?.role || '').toLowerCase()
-    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend') { req._actorName = u?.name || 'System'; return next() }
+    if (role === 'admin' || role === 'owner' || role === 'owner2' || role === 'backend' || role === 'backend2') { req._actorName = u?.name || 'System'; return next() }
     return res.status(403).json({ success: false, message: 'Forbidden' })
   } catch (e) {
     return res.status(401).json({ success: false, message: 'Unauthorized' })

@@ -11,6 +11,7 @@ const ROLE_OPTIONS = [
   'owner',
   'owner2',
   'backend', // observability/super-viewer role
+  'backend2',
   'user', // fallback/basic role
   'backups',
 ]
