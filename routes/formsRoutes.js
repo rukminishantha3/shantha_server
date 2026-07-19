@@ -320,6 +320,16 @@ function cachePut(webhookUrl, payload, data){
     for (const [kk] of arr) WEBHOOK_CACHE.delete(kk)
   }
 }
+function cacheInvalidate(webhookUrl) {
+  if (!webhookUrl) return;
+  const prefix = String(webhookUrl) + '|';
+  const exact = String(webhookUrl);
+  for (const k of WEBHOOK_CACHE.keys()) {
+    if (k === exact || k.startsWith(prefix)) {
+      WEBHOOK_CACHE.delete(k);
+    }
+  }
+}
 async function withInflight(key, run){
   const existing = WEBHOOK_INFLIGHT.get(key)
   if (existing) return existing
@@ -679,6 +689,7 @@ router.post('/booking/webhook', async (req, res) => {
         if (serialKey) markSerial(serialKey)
       }
       if (httpMethod === 'GET') cachePut(webhookUrl, payload, resp.data)
+      else cacheInvalidate(webhookUrl)
       return res.json({ success: true, forwarded: true, status: resp.status, data: applyLiteWebhookData(resp.data, liteMode) })
     }
     return res.status(502).json({ success: false, message: 'Webhook call failed', status: resp.status, data: resp.data })
@@ -802,6 +813,7 @@ router.post('/jobcard/webhook', async (req, res) => {
         if (serialKey) markSerial(serialKey)
       }
       if (httpMethod === 'GET') cachePut(webhookUrl, payload, resp.data)
+      else cacheInvalidate(webhookUrl)
       return res.json({ success: true, forwarded: true, status: resp.status, data: applyLiteWebhookData(resp.data, liteMode) })
     }
     return res.status(502).json({ success: false, message: 'Webhook call failed', status: resp.status, data: resp.data })
