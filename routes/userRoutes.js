@@ -114,7 +114,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase()
-    const user = await User.findOne({ email })
+    const escapedEmail = email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const user = await User.findOne({
+      $or: [
+        { email },
+        { email: new RegExp('^' + escapedEmail + '$', 'i') }
+      ]
+    })
 
     if (!user) {
       return res.status(404).send({
