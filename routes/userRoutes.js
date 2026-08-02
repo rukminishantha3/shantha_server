@@ -669,4 +669,48 @@ router.patch('/:id', authMiddleware, requireAdminOwner, async (req, res) => {
   }
 })
 
+router.get('/mechanics', authMiddleware, async (req, res) => {
+  try {
+    const owner = await User.findOne({ role: 'owner' })
+    const mechanics = owner?.metadata?.mechanics || []
+    return res.json({ success: true, data: mechanics })
+  } catch (err) {
+    console.error('GET /users/mechanics failed', err)
+    return res.status(500).json({ success: false, message: 'Failed to fetch mechanics' })
+  }
+})
+
+// POST /users/mechanics - update mechanics list (restricted to Owner/Admin)
+router.post('/mechanics', authMiddleware, async (req, res) => {
+  try {
+    const me = await User.findById(req.userId)
+    const role = String(me?.role || '').toLowerCase()
+    if (role !== 'owner' && role !== 'owner2' && role !== 'admin' && role !== 'backend' && role !== 'backend2') {
+      return res.status(403).json({ success: false, message: 'Forbidden: Owner, Admin or Backend only' })
+    }
+
+    const mechanics = req.body.mechanics
+    if (!Array.isArray(mechanics)) {
+      return res.status(400).json({ success: false, message: 'Invalid mechanics list' })
+    }
+
+    // Find the owner user (Nagesh) to store the data centrally
+    let owner = await User.findOne({ role: 'owner' })
+    if (!owner) {
+      // Fallback to updating the logged-in user if no owner exists
+      owner = me
+    }
+
+    if (!owner.metadata) owner.metadata = {}
+    owner.metadata.mechanics = mechanics
+    owner.markModified('metadata')
+    await owner.save()
+
+    return res.json({ success: true, message: 'Mechanics updated in database', data: mechanics })
+  } catch (err) {
+    console.error('POST /users/mechanics failed', err)
+    return res.status(500).json({ success: false, message: 'Failed to update mechanics' })
+  }
+})
+
 module.exports = router;
