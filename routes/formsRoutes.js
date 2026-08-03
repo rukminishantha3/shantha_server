@@ -300,7 +300,7 @@ const recentSerials = new Map(); // key -> timestamp
 // Lightweight cache for GET webhook proxy responses to reduce perceived latency
 // Especially useful for staff/account views that poll frequently.
 const WEBHOOK_CACHE = new Map(); // key -> { t:number, data:any }
-const CACHE_TTL_MS = 20 * 1000; // 20s TTL for faster repeated reads in UI
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min TTL for faster repeated reads in UI
 const WEBHOOK_INFLIGHT = new Map(); // key -> Promise<any>
 function cacheKey(webhookUrl, payload){
   try { return `${webhookUrl}|${JSON.stringify(payload||{})}` } catch { return String(webhookUrl||'') }
@@ -648,13 +648,21 @@ router.post('/booking/webhook', async (req, res) => {
       }
 
       total = extractTotalFromWebhookData(firstData)
-      const firstPageRows = extractRowsFromWebhookData(firstData)
+       const firstPageRows = extractRowsFromWebhookData(firstData)
       if (firstPageRows.length > 0) {
         allRows = allRows.concat(firstPageRows)
       }
 
       const limitRows = total !== null ? Math.min(requestedPageSize, total) : requestedPageSize
-      const totalPagesNeeded = Math.max(1, Math.ceil(limitRows / 100))
+      if (firstPageRows.length >= limitRows || (total !== null && firstPageRows.length >= total)) {
+        if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
+        const merged = applyLiteWebhookData(applyWebhookDateRangeFilter(mergeRowsIntoWebhookData(firstData, allRows), payload || {}), liteMode)
+        cachePut(webhookUrl, payload, merged)
+        return res.json({ success: true, forwarded: true, status: 200, data: merged })
+      }
+
+      const pageSizeReturned = firstPageRows.length > 0 ? firstPageRows.length : 100
+      const totalPagesNeeded = Math.max(1, Math.ceil(limitRows / pageSizeReturned))
 
       const promises = []
       for (let p = 2; p <= totalPagesNeeded; p++) {
@@ -680,6 +688,8 @@ router.post('/booking/webhook', async (req, res) => {
       const merged = applyLiteWebhookData(applyWebhookDateRangeFilter(mergeRowsIntoWebhookData(firstData, allRows), payload || {}), liteMode)
       cachePut(webhookUrl, payload, merged)
       return res.json({ success: true, forwarded: true, status: 200, data: merged })
+
+
     } else {
       resp = await axiosRequestWithRetry('POST', webhookUrl, payload || {}, config)
     }
@@ -778,7 +788,15 @@ router.post('/jobcard/webhook', async (req, res) => {
       }
 
       const limitRows = total !== null ? Math.min(requestedPageSize, total) : requestedPageSize
-      const totalPagesNeeded = Math.max(1, Math.ceil(limitRows / 100))
+      if (firstPageRows.length >= limitRows || (total !== null && firstPageRows.length >= total)) {
+        if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
+        const merged = applyLiteWebhookData(mergeRowsIntoWebhookData(firstData, allRows), liteMode)
+        cachePut(webhookUrl, payload, merged)
+        return res.json({ success: true, forwarded: true, status: 200, data: merged })
+      }
+
+      const pageSizeReturned = firstPageRows.length > 0 ? firstPageRows.length : 100
+      const totalPagesNeeded = Math.max(1, Math.ceil(limitRows / pageSizeReturned))
 
       const promises = []
       for (let p = 2; p <= totalPagesNeeded; p++) {
