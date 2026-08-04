@@ -507,7 +507,20 @@ function applyLiteWebhookData(data, lite) {
 function extractSerial(obj) {
   try {
     if (!obj) return null;
-    // common shapes from client: { action:'save', data:{ serialNo, formValues, payload } }
+    // Direct Booking ID
+    const bid = obj.bookingId || obj.data?.bookingId;
+    if (bid) return `booking_id_${String(bid).trim()}`;
+
+    // Booking vehicle Chassis
+    const chassis = obj.chassisNo || obj.chassis || obj.vehicle?.availabilityInfo?.chassis || obj.vehicle?.chassisNo || obj.data?.chassisNo || obj.data?.vehicle?.availabilityInfo?.chassis;
+    if (chassis) {
+      const cleanChassis = String(chassis).trim().toUpperCase();
+      if (cleanChassis && cleanChassis !== '__ALLOT__' && cleanChassis !== 'ALLOT') {
+        return `booking_chassis_${cleanChassis}`;
+      }
+    }
+
+    // Quotation / JobCard Serials
     if (obj.data?.serialNo) return String(obj.data.serialNo);
     if (obj.data?.jcNo) return String(obj.data.jcNo);
     if (obj.serialNo) return String(obj.serialNo);
@@ -516,6 +529,15 @@ function extractSerial(obj) {
     if (obj.formValues?.jcNo) return String(obj.formValues.jcNo);
     if (obj.payload?.formValues?.serialNo) return String(obj.payload.formValues.serialNo);
     if (obj.payload?.formValues?.jcNo) return String(obj.payload.formValues.jcNo);
+
+    // Mobile + Customer Name fallback for allot bookings
+    const mob = obj.mobileNumber || obj.mobile || obj.data?.mobileNumber || obj.data?.mobile;
+    const name = obj.customerName || obj.name || obj.data?.customerName || obj.data?.name;
+    if (mob && name) {
+      const cleanMob = String(mob).replace(/\D/g, '').slice(-10);
+      const cleanName = String(name).trim().toLowerCase().replace(/\s+/g, '');
+      if (cleanMob && cleanName) return `booking_mob_${cleanMob}_${cleanName}`;
+    }
   } catch {}
   return null;
 }
