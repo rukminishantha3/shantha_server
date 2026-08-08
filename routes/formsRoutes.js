@@ -341,6 +341,8 @@ async function withInflight(key, run){
 function extractRowsFromWebhookData(data) {
   if (!data) return []
   if (Array.isArray(data)) return data
+  if (Array.isArray(data.rows) && data.rows.length > 0) return data.rows
+  if (Array.isArray(data.data) && data.data.length > 0) return data.data
   if (Array.isArray(data.rows)) return data.rows
   if (Array.isArray(data.data)) return data.data
   return []
@@ -424,10 +426,13 @@ function extractWebhookRowTimestamp(row) {
   } catch {
     payload = null
   }
+  const val = row.values || {}
   const candidates = [
     payload?.ts,
     payload?.createdAt,
     payload?.submittedAt,
+    payload?.savedAt,
+    payload?.updatedAt,
     payload?.formValues?.ts,
     payload?.formValues?.createdAt,
     row['Created At'],
@@ -438,6 +443,14 @@ function extractWebhookRowTimestamp(row) {
     row.ts,
     row.Time,
     row.Date,
+    val['Created At'],
+    val['Submitted At'],
+    val.Timestamp,
+    val.timestamp,
+    val.createdAt,
+    val.ts,
+    val.Time,
+    val.Date,
   ]
   for (const value of candidates) {
     const t = parseIstTimestampMs(value)
@@ -452,11 +465,44 @@ function applyWebhookDateRangeFilter(data, payload) {
   if (!start || !end) return data
   const rows = extractRowsFromWebhookData(data)
   if (!rows.length) return data
+
   const filteredRows = rows.filter((row) => {
     const t = extractWebhookRowTimestamp(row)
     return Boolean(t && t >= start && t <= end)
   })
-  return mergeRowsIntoWebhookData(data, filteredRows)
+  
+  // Capture original pagination totals to prevent client loop from terminating early
+  const originalTotal = data && typeof data === 'object' ? data.total : null
+  const originalCount = data && typeof data === 'object' ? data.count : null
+  const originalTotalRows = data && typeof data === 'object' ? data.totalRows : null
+  const originalTotalCount = data && typeof data === 'object' ? data.totalCount : null
+
+  const merged = mergeRowsIntoWebhookData(data, filteredRows)
+  
+  if (originalTotal !== null && originalTotal !== undefined) merged.total = originalTotal
+  if (originalCount !== null && originalCount !== undefined) merged.count = originalCount
+  if (originalTotalRows !== null && originalTotalRows !== undefined) merged.totalRows = originalTotalRows
+  if (originalTotalCount !== null && originalTotalCount !== undefined) merged.totalCount = originalTotalCount
+
+  // Recalculate branchSummary total counts based on filteredRows
+  if (merged && typeof merged === 'object' && Array.isArray(merged.branchSummary)) {
+    const counts = {}
+    filteredRows.forEach((r) => {
+      const val = (r && r.values) ? r.values : r
+      const b = String(val?.Branch || val?.branch || val?.['Branch'] || '').trim().toUpperCase()
+      if (b) counts[b] = (counts[b] || 0) + 1
+    })
+    merged.branchSummary = merged.branchSummary.map((item) => {
+      const key = String(item.branch || item.key || '').trim().toUpperCase()
+      const totalCount = counts[key] || 0
+      return {
+        ...item,
+        total: totalCount
+      }
+    }).filter(item => item.total > 0)
+  }
+  
+  return merged
 }
 
 function mergeRowsIntoWebhookData(data, rows) {
@@ -464,14 +510,19 @@ function mergeRowsIntoWebhookData(data, rows) {
     ? { ...data }
     : {}
   if (Array.isArray(data)) return rows
-  if (Array.isArray(out.rows)) out.rows = rows
-  else if (Array.isArray(out.data)) out.data = rows
-  else out.rows = rows
+  
+  if (out.rows !== undefined) out.rows = rows
+  if (out.data !== undefined) out.data = rows
+  
+  if (out.rows === undefined && out.data === undefined) {
+    out.rows = rows
+  }
+  
   const total = rows.length
-  if (out.total === undefined || out.total === null) out.total = total
-  if ('count' in out && (out.count === undefined || out.count === null)) out.count = total
-  if ('totalRows' in out && (out.totalRows === undefined || out.totalRows === null)) out.totalRows = total
-  if ('totalCount' in out && (out.totalCount === undefined || out.totalCount === null)) out.totalCount = total
+  out.total = total
+  if ('count' in out) out.count = total
+  if ('totalRows' in out) out.totalRows = total
+  if ('totalCount' in out) out.totalCount = total
   if ('page' in out && (out.page === undefined || out.page === null)) out.page = 1
   if ('pageNo' in out && (out.pageNo === undefined || out.pageNo === null)) out.pageNo = 1
   return out
@@ -782,7 +833,7 @@ router.post('/jobcard/webhook', async (req, res) => {
       const shouldAutoPaginate = action === 'list' && requestedPage === 1 && (requestedPageSizeRaw === 0 || requestedPageSizeRaw > 100)
 
       if (!shouldAutoPaginate) {
-        const data = applyLiteWebhookData(await getPage(payload || {}), liteMode)
+        const data = applyLiteWebhookData(applyWebhookDateRangeFilter(await getPage(payload || {}), payload || {}), liteMode)
         return res.json({ success: true, forwarded: true, status: 200, data })
       }
 
@@ -812,7 +863,7 @@ router.post('/jobcard/webhook', async (req, res) => {
       const limitRows = total !== null ? Math.min(requestedPageSize, total) : requestedPageSize
       if (firstPageRows.length >= limitRows || (total !== null && firstPageRows.length >= total)) {
         if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
-        const merged = applyLiteWebhookData(mergeRowsIntoWebhookData(firstData, allRows), liteMode)
+        const merged = applyLiteWebhookData(applyWebhookDateRangeFilter(mergeRowsIntoWebhookData(firstData, allRows), payload || {}), liteMode)
         cachePut(webhookUrl, payload, merged)
         return res.json({ success: true, forwarded: true, status: 200, data: merged })
       }
@@ -841,7 +892,7 @@ router.post('/jobcard/webhook', async (req, res) => {
       }
 
       if (allRows.length > requestedPageSize) allRows = allRows.slice(0, requestedPageSize)
-      const merged = applyLiteWebhookData(mergeRowsIntoWebhookData(firstData, allRows), liteMode)
+      const merged = applyLiteWebhookData(applyWebhookDateRangeFilter(mergeRowsIntoWebhookData(firstData, allRows), payload || {}), liteMode)
       cachePut(webhookUrl, payload, merged)
       return res.json({ success: true, forwarded: true, status: 200, data: merged })
     } else {
