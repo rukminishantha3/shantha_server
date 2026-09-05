@@ -583,11 +583,9 @@ function extractSerial(obj) {
 
     // Mobile + Customer Name fallback for allot bookings
     const mob = obj.mobileNumber || obj.mobile || obj.data?.mobileNumber || obj.data?.mobile;
-    const name = obj.customerName || obj.name || obj.data?.customerName || obj.data?.name;
-    if (mob && name) {
+    if (mob) {
       const cleanMob = String(mob).replace(/\D/g, '').slice(-10);
-      const cleanName = String(name).trim().toLowerCase().replace(/\s+/g, '');
-      if (cleanMob && cleanName) return `booking_mob_${cleanMob}_${cleanName}`;
+      if (cleanMob && cleanMob.length === 10) return `booking_mob_${cleanMob}`;
     }
   } catch {}
   return null;
@@ -612,8 +610,11 @@ function markSerial(key) {
 }
 
 async function axiosRequestWithRetry(method, url, dataOrParams, config, maxRetries = 3, delayMs = 600) {
+  const isPost = method.toUpperCase() === 'POST';
+  // Do NOT retry non-idempotent POST creation requests to prevent duplicate sheet row insertions
+  const retries = isPost ? 1 : maxRetries;
   let lastErr;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       let resp;
       if (method.toUpperCase() === 'GET') {
@@ -632,7 +633,7 @@ async function axiosRequestWithRetry(method, url, dataOrParams, config, maxRetri
       const isTransientError = respData && respData.ok === false && typeof respData.error === 'string' &&
         /simultaneous invocations|lock|timeout|busy/i.test(respData.error);
 
-      if (isTransientError && attempt < maxRetries) {
+      if (isTransientError && attempt < retries) {
         console.warn(`Transient Apps Script error on attempt ${attempt}: ${respData.error}. Retrying in ${delayMs * attempt}ms...`);
         await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
         continue;
@@ -640,7 +641,7 @@ async function axiosRequestWithRetry(method, url, dataOrParams, config, maxRetri
       return resp;
     } catch (err) {
       lastErr = err;
-      if (attempt === maxRetries) throw err;
+      if (attempt === retries) throw err;
       console.warn(`Webhook request failed on attempt ${attempt}: ${err.message}. Retrying in ${delayMs * attempt}ms...`);
       await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
     }
@@ -656,12 +657,17 @@ router.post('/booking/webhook', async (req, res) => {
     }
     const httpMethod = (method || 'POST').toUpperCase()
     const action = String(payload?.action || '').toLowerCase()
-    const shouldCheckDuplicate = httpMethod !== 'GET' && (!action || action === 'save')
+    const shouldCheckDuplicate = httpMethod !== 'GET' && (!action || action === 'save' || action === 'create')
     const liteMode = Boolean(payload?.lite)
     if (shouldCheckDuplicate) {
       const serialKey = extractSerial(payload)
-      if (serialKey && isDuplicateSerial(serialKey)) {
-        return res.json({ success: true, duplicateSuppressed: true, message: 'Duplicate save suppressed' })
+      if (serialKey) {
+        if (isDuplicateSerial(serialKey)) {
+          console.warn(`[formsRoutes] Suppressed duplicate booking save for key: ${serialKey}`)
+          return res.json({ success: true, duplicateSuppressed: true, message: 'Duplicate save suppressed' })
+        }
+        // Immediately reserve/lock serial key to catch concurrent in-flight clicks
+        markSerial(serialKey)
       }
     }
     const config = {
