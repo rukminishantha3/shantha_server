@@ -656,7 +656,23 @@ router.post('/booking/webhook', async (req, res) => {
       return res.status(400).json({ success: false, message: 'webhookUrl is required.' })
     }
     const httpMethod = (method || 'POST').toUpperCase()
-    const action = String(payload?.action || '').toLowerCase()
+    const rawAction = String(payload?.action || '').trim()
+    const action = rawAction.toLowerCase()
+
+    // Normalize follow-up updates for booking GAS (which expects action: 'update', bookingId, patch)
+    if (httpMethod !== 'GET' && (action === 'updatefollowup' || action === 'update_followup')) {
+      if (payload) {
+        payload.action = 'update'
+        payload.bookingId = String(payload.bookingId || payload.serialNo || payload.jcNo || payload.id || '').trim()
+        if (payload.patch) {
+          const notesText = payload.patch.notes || payload.patch.alertNotes || payload.patch.followupNotes || payload.patch.followUp?.notes
+          if (notesText) {
+            payload.patch.notes = notesText
+          }
+        }
+      }
+    }
+
     const shouldCheckDuplicate = httpMethod !== 'GET' && (!action || action === 'save' || action === 'create')
     const liteMode = Boolean(payload?.lite)
     if (shouldCheckDuplicate) {
