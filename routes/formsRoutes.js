@@ -659,9 +659,15 @@ router.post('/booking/webhook', async (req, res) => {
     const rawAction = String(payload?.action || '').trim()
     const action = rawAction.toLowerCase()
 
-    // Normalize follow-up updates for booking GAS (which expects action: 'update', bookingId, patch)
+    // Normalize follow-up updates ONLY for booking GAS (which expects action: 'update', bookingId, patch).
+    // Quotations (Q-*) and Jobcards (JC-*) strictly require action: 'updatefollowup'.
+    const serialOrId = String(payload?.serialNo || payload?.bookingId || payload?.jcNo || payload?.id || '').trim().toUpperCase()
+    const targetUrl = String(webhookUrl || '')
+    const isQuotation = serialOrId.startsWith('Q-') || targetUrl.includes('AKfycbw8BLxc') || targetUrl.includes('AKfycwb8BLxc')
+    const isJobcard = serialOrId.startsWith('JC-') || serialOrId.startsWith('JOBCARD_') || targetUrl.includes('AKfycbzd_eCs')
+
     if (httpMethod !== 'GET' && (action === 'updatefollowup' || action === 'update_followup')) {
-      if (payload) {
+      if (!isQuotation && !isJobcard && payload) {
         payload.action = 'update'
         payload.bookingId = String(payload.bookingId || payload.serialNo || payload.jcNo || payload.id || '').trim()
         if (payload.patch) {
