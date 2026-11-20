@@ -1,0 +1,598 @@
+[
+  {
+    "_id": "68e3a2633735136da436e6ea",
+    "code": "MUDP",
+    "name": "MUDDINAPALYA",
+    "type": "sales",
+    "phone": "9731366921",
+    "email": "shanthamultibrand@gmail.com",
+    "address": {
+      "line1": "Opp. to Muddanna Ceramics",
+      "line2": "Main Road",
+      "area": "Muddinapalya",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560010"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.998763,
+        77.553871
+      ]
+    },
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "staff": [
+      "68e36e4ebd7d6cc852b4d6a3",
+      "6908813e0b32b7d3056cf71e"
+    ],
+    "boys": [
+      "68e37a3abd7d6cc852b4d6b0"
+    ],
+    "mechanics": [
+      "68e37a85bd7d6cc852b4d6b3"
+    ],
+    "status": "active",
+    "openingHours": {
+      "mon": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "tue": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "wed": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "thu": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "fri": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "sat": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "sun": {
+        "open": "10:00",
+        "close": "14:00"
+      }
+    },
+    "metadata": {
+      "branchManager": "Rukmini",
+      "notes": "Sales-only branch located near Rajajinagar.",
+      "establishedYear": 2022
+    },
+    "createdAt": "2025-10-06T11:05:07.332Z",
+    "updatedAt": "2025-12-19T13:23:13.010Z",
+    "__v": 0,
+    "id": "68e3a2633735136da436e6ea"
+  },
+  {
+    "_id": "68e3e60cb9beaf8332e21472",
+    "code": "BYDR",
+    "name": "BYADARAHALLI",
+    "type": "sales & services",
+    "phone": "7019974219",
+    "email": "shanthamultibrand@gmail.com",
+    "address": {
+      "line1": "Main Road",
+      "line2": "Opp to Petrol Bunk",
+      "area": "Byadarahalli",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560010"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.998763,
+        77.553871
+      ]
+    },
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "staff": [
+      "6a5471420ee27c6df196a61a"
+    ],
+    "boys": [
+      "68e37a3abd7d6cc852b4d6b0",
+      "68e64542b718afce493041d0"
+    ],
+    "mechanics": [
+      "68e6437eb718afce493041cd"
+    ],
+    "status": "active",
+    "openingHours": {
+      "mon": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "tue": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "wed": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "thu": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "fri": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "sat": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "sun": {
+        "open": "10:00",
+        "close": "14:00"
+      }
+    },
+    "metadata": {
+      "branchManager": "Shiva",
+      "notes": "Sales-only branch located near Rajajinagar.",
+      "establishedYear": 2022
+    },
+    "createdAt": "2025-10-06T15:53:48.360Z",
+    "updatedAt": "2025-12-19T13:23:23.312Z",
+    "__v": 0,
+    "id": "68e3e60cb9beaf8332e21472"
+  },
+  {
+    "_id": "68e513ea73d0b82851957153",
+    "code": "ANDR",
+    "name": "ANDRAHALLI",
+    "type": "sales",
+    "phone": "0801234567",
+    "email": "muddinapalya@shantha.com",
+    "address": {
+      "line1": "Near Bus Stand",
+      "line2": "Opp. Shantha Motors",
+      "area": "Muddinapalya",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [
+      "68fc72dc5d8bc24009dbe93f"
+    ],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:21:46.340Z",
+    "updatedAt": "2025-12-19T13:23:38.190Z",
+    "__v": 0,
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "id": "68e513ea73d0b82851957153"
+  },
+  {
+    "_id": "68e5143e73d0b82851957156",
+    "code": "NEGD",
+    "name": "NELAGADRAHALLI",
+    "type": "sales",
+    "phone": "0801234567",
+    "email": "shanthamultibrandbikes@gmail.com",
+    "address": {
+      "line1": "Near Bus Stand",
+      "line2": "Opp. Shantha Motors",
+      "area": "Muddinapalya",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:23:10.025Z",
+    "updatedAt": "2025-12-19T13:23:54.088Z",
+    "__v": 0,
+    "id": "68e5143e73d0b82851957156"
+  },
+  {
+    "_id": "68e5146d73d0b82851957159",
+    "code": "KADG",
+    "name": "KADABAGERE",
+    "type": "sales & services",
+    "phone": "0801234567",
+    "email": "shanthamultibrandbikes@gmail.com",
+    "address": {
+      "line1": "Main road",
+      "line2": "",
+      "area": "Kadabagere",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [
+      "68fa21ce67462b7a0688de25"
+    ],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:23:57.009Z",
+    "updatedAt": "2025-12-19T13:23:03.215Z",
+    "__v": 0,
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "id": "68e5146d73d0b82851957159"
+  },
+  {
+    "_id": "68e5148a73d0b8285195715f",
+    "code": "DGLT",
+    "name": "D-Group Layout",
+    "type": "service",
+    "phone": "0801234567",
+    "email": "shanthamultibrandbikes@gmail.com",
+    "address": {
+      "line1": "Near Bus Stand",
+      "line2": "Opp. Shantha Motors",
+      "area": "Muddinapalya",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "inactive",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:24:26.162Z",
+    "updatedAt": "2025-12-09T17:59:25.220Z",
+    "__v": 0,
+    "id": "68e5148a73d0b8285195715f"
+  },
+  {
+    "_id": "68e514a173d0b82851957162",
+    "code": "HEGL",
+    "name": "HEGGANAHALLI",
+    "type": "sales & services",
+    "phone": "8971585057",
+    "email": "shanthamultibrandbikes@gmail.com",
+    "address": {
+      "line1": "",
+      "line2": "",
+      "area": "Hegganahalli",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [
+      "68fc6fd65d8bc24009dbe911"
+    ],
+    "boys": [],
+    "mechanics": [
+      "68e64336b718afce493041ca"
+    ],
+    "status": "active",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:24:49.905Z",
+    "updatedAt": "2025-12-19T13:22:45.569Z",
+    "__v": 0,
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "id": "68e514a173d0b82851957162"
+  },
+  {
+    "_id": "68e514bf73d0b82851957165",
+    "code": "CHNL",
+    "name": "CHANNENAHALLI",
+    "type": "sales & services",
+    "phone": "7022878048",
+    "email": "shanthamultibrandbikes@gmail.com",
+    "address": {
+      "line1": "Main road",
+      "line2": "",
+      "area": "Chennanahalli",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [
+      "6900745017a2011a7132c555",
+      "6904567580f46f1c4b6cd012"
+    ],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:25:19.306Z",
+    "updatedAt": "2025-12-19T13:22:25.696Z",
+    "__v": 0,
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "id": "68e514bf73d0b82851957165"
+  },
+  {
+    "_id": "68e5150d73d0b82851957168",
+    "code": "TAVR",
+    "name": "TAVREKERE",
+    "type": "sales",
+    "phone": "9353190015",
+    "email": "shanthamultibrandbikes@gmail.com",
+    "address": {
+      "line1": "Main road",
+      "line2": "",
+      "area": "Tavrekere",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "pincode": "560072"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        12.972,
+        77.501
+      ]
+    },
+    "staff": [
+      "68fa209067462b7a0688ddff"
+    ],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "metadata": {
+      "openedOn": "2018-06-15",
+      "specialization": "Motorcycles & Scooters"
+    },
+    "createdAt": "2025-10-07T13:26:37.356Z",
+    "updatedAt": "2025-12-19T13:21:56.223Z",
+    "__v": 0,
+    "manager": "68e36ee2bd7d6cc852b4d6a9",
+    "id": "68e5150d73d0b82851957168"
+  },
+  {
+    "_id": "6a070912a7ed7ab65282baeb",
+    "code": "DSRH",
+    "name": "DASARAHALLI",
+    "type": "sales & services",
+    "phone": "97313666921",
+    "email": "shanta@123",
+    "address": {
+      "line1": "Dasarahalli metro",
+      "line2": "Beside Metro",
+      "area": "DASARAHALLI",
+      "city": "Banglore",
+      "state": "Karnataka",
+      "pincode": "560091"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        2,
+        3
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "createdAt": "2026-05-15T11:52:50.229Z",
+    "updatedAt": "2026-05-15T11:52:50.229Z",
+    "__v": 0,
+    "id": "6a070912a7ed7ab65282baeb"
+  },
+  {
+    "_id": "6a534a68e46bf147c9059d9d",
+    "code": "SUK",
+    "name": "SUNKADAKATTE",
+    "type": "sales & services",
+    "phone": "97313666921",
+    "email": "shanta@123",
+    "address": {
+      "line1": "Sunkadakatte",
+      "line2": "Opp To UDUPI KITCHEN",
+      "area": "SUNKADAKATTE",
+      "city": "Banglore",
+      "state": "Karnataka",
+      "pincode": "560091"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        2,
+        3
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "createdAt": "1970-01-01T00:00:00.000Z",
+    "updatedAt": "2026-07-12T01:52:50.229Z",
+    "__v": 0,
+    "id": "6a534a68e46bf147c9059d9d"
+  },
+  {
+    "_id": "6a942e655e48fb82520a7f09",
+    "code": "BGLG",
+    "name": "BAGALAGUNTE",
+    "type": "sales & services",
+    "phone": "97313666921",
+    "email": "shanta@123",
+    "address": {
+      "line1": "HESSARAGATTA",
+      "line2": "Opp To UDUPI KITCHEN",
+      "area": "BAGALAGUNTE",
+      "city": "Banglore",
+      "state": "Karnataka",
+      "pincode": "560091"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        2,
+        3
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "createdAt": "1970-01-01T00:00:00.000Z",
+    "updatedAt": "2026-09-03T08:20:54.726Z",
+    "__v": 0,
+    "id": "6a942e655e48fb82520a7f09"
+  },
+  {
+    "_id": "6a97ccebcc445893f75e08cf",
+    "code": "OTH",
+    "name": "OTHERS",
+    "type": "sales & services",
+    "phone": "97313666921",
+    "email": "shanta@123",
+    "address": {
+      "line1": "OTHERS",
+      "line2": "Opp To UDUPI KITCHEN",
+      "area": "HESSARAGATTA",
+      "city": "Banglore",
+      "state": "Karnataka",
+      "pincode": "560091"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        2,
+        3
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "createdAt": "1970-01-01T00:00:00.000Z",
+    "updatedAt": "2026-07-12T01:52:50.229Z",
+    "__v": 0,
+    "id": "6a97ccebcc445893f75e08cf"
+  },
+  {
+    "_id": "6ab8f53594fee71187b4e873",
+    "code": "CBVR",
+    "name": "CHIKKABANAVARA",
+    "type": "sales & services",
+    "phone": "97313666921",
+    "email": "shanta@123",
+    "address": {
+      "line1": "CHIKKABANAVARA",
+      "line2": "Opp To UDUPI KITCHEN",
+      "area": "CHIKKABANAVARA",
+      "city": "Banglore",
+      "state": "Karnataka",
+      "pincode": "560091"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        2,
+        3
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "createdAt": "2026-09-27T00:00:00.000Z",
+    "updatedAt": "2026-09-27T08:20:54.726Z",
+    "__v": 0,
+    "id": "6ab8f53594fee71187b4e873"
+  },
+  {
+    "_id": "6afb45e9ec4da2874e4651c4",
+    "code": "ULLAL",
+    "name": "ULLAL",
+    "type": "sales & services",
+    "phone": "9731366921",
+    "email": "shanthamultibrand@gmail.com",
+    "address": {
+      "line1": "Ullal",
+      "line2": "Bangalore",
+      "area": "Ullal",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560056"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        77.4912,
+        12.9667
+      ]
+    },
+    "staff": [],
+    "boys": [],
+    "mechanics": [],
+    "status": "active",
+    "createdAt": "2026-11-16T17:16:26.565Z",
+    "updatedAt": "2026-11-16T17:16:26.565Z",
+    "id": "6afb45e9ec4da2874e4651c4"
+  }
+]
